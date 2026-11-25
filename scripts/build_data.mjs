@@ -16,6 +16,40 @@ const characters = arcanists.map(a => ({
   insight: (a.Insight || []).length, resonance: (a.Resonance || []).length
 }));
 characters.sort((a,b)=>b.rarity-a.rarity || a.id-b.id);
+// ===== 合并 re1999-data 中文名 + 技能（可选；缺 character.json/skill.json 时跳过）=====
+const chnFile = readJSON(path.join(DATA, 'character.json'));
+const skillFile = readJSON(path.join(DATA, 'skill.json'));
+if (Array.isArray(chnFile) && Array.isArray(skillFile)) {
+  const skillMap = new Map(skillFile.map(s => [s.id, s]));
+  const chnMap = new Map(chnFile.map(c => [c.nameEng, c]));
+  let matched = 0;
+  for (const c of characters) {
+    const zh = chnMap.get(c.name);
+    if (!zh) { continue; }
+    matched++;
+    c.nameZh = zh.name;
+    const skillIds = [];
+    if (zh.skill) {
+      for (const part of String(zh.skill).split('|')) {
+        const seg = part.split('#');
+        const slot = Number(seg[0]) || 0;
+        for (let i = 1; i < seg.length; i++) {
+          const id = Number(seg[i]);
+          const sk = skillMap.get(id);
+          if (sk) skillIds.push({ slot, tier: i, id, name: sk.name || ('技能' + id), desc: sk.desc_art || '' });
+        }
+      }
+    }
+    if (zh.exSkill) {
+      const sk = skillMap.get(Number(zh.exSkill));
+      if (sk) c.ritual = { id: Number(zh.exSkill), name: sk.name || ('仪式' + zh.exSkill), desc: sk.desc_art || '' };
+    }
+    c.skills = skillIds;
+  }
+  console.log('合并中文名+技能: ' + matched + '/' + characters.length);
+} else {
+  console.log('无 character.json/skill.json，跳过中文合并');
+}
 const psychubes = (readJSON(path.join(DATA, 'psychubes.json')) || []).map(p => ({
   id: p.Id, name: p.Name, rarity: p.Rarity, rarityName: rarityName(p.Rarity),
   tag: p.Tag, impression: p.Impression || ''

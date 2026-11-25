@@ -1,5 +1,5 @@
-﻿import db from '../lib/db.mjs'
-import { rulePrefix, rarityName, rarityColor } from '../lib/constants.mjs'
+import db from '../lib/db.mjs'
+import { rulePrefix, rarityName } from '../lib/constants.mjs'
 export class R1999Query extends plugin {
   constructor() {
     super({
@@ -8,7 +8,7 @@ export class R1999Query extends plugin {
       event: 'message',
       priority: 500,
       rule: [
-        { reg: `^${rulePrefix}(角色|人物|arcanist)\\s*(.+)$`, fnc: 'queryCharacter', permission: 'master' },
+        { reg: `^${rulePrefix}(角色|人物|arcanist)\\s*(.+)$`, fnc: 'queryCharacter' },
         { reg: `^${rulePrefix}(心相|psychube)\\s*(.+)$`, fnc: 'queryPsychube' },
         { reg: `^${rulePrefix}(物品|item)\\s*(.+)$`, fnc: 'queryItem' },
         { reg: `^${rulePrefix}(图鉴状态|状态)\\s*$`, fnc: 'status' }
@@ -17,7 +17,7 @@ export class R1999Query extends plugin {
   }
   async queryCharacter() {
     const q = this._kw()
-    if (!q) return await this.reply('用法：#角色 <名称或ID>，如 #角色 10135')
+    if (!q) return await this.reply('用法：#角色 <名称或ID>，如 #角色 槲寄生')
     const ids = db.searchCharacter(q)
     if (!ids.length) return await this.reply(`未找到角色「${q}」`)
     const lines = ids.map(id => this._charLine(id))
@@ -55,8 +55,13 @@ export class R1999Query extends plugin {
   }
   _charLine(id) {
     const c = db.getCharacter(id)
-    if (!c) return `#${id}`
-    const star = '★'.repeat(Math.max(0, (c.rarity || 0) - 2))
-    return `${c.name} ${c.rarityName}｜${c.afflatusName}｜洞悉${c.insight}组｜共鸣${c.resonance}组${c.released ? '' : '（未实装）'}`
+    if (!c) return '#' + id
+    const nm = c.nameZh ? (c.nameZh + ' (' + c.name + ')') : c.name
+    const skills = (c.skills || [])
+      .filter((s, i, a) => a.findIndex(x => x.name === s.name) === i)
+      .map(s => s.name).join(' / ')
+    return nm + ' ' + c.rarityName + '｜' + c.afflatusName + '｜' + (skills || '无技能')
+      + (c.ritual ? '｜仪式:' + c.ritual.name : '')
+      + (c.released ? '' : '（未实装）')
   }
 }
