@@ -119,7 +119,8 @@ export class R1999Query extends plugin {
     const c = db.getCharacter(id)
     if (!c) return '#'+id
     const nm = c.nameZh ? (c.nameZh+' ('+c.name+')') : c.name
-    const lines = ['【'+nm+'】'+c.rarityName+'｜'+c.afflatusName+(c.released?'':'（未实装）')]
+    const extra = [c.rarityName, c.afflatusName].filter(Boolean).concat(c.dmgTypeName?[c.dmgTypeName]:[]).concat(c.tags&&c.tags.length?['['+c.tags.join('/')+']']:[]).join('｜')
+    const lines = ['【'+nm+'】'+extra+(c.released?'':'（未实装）')]
     const seen = new Set()
     for (const s of (c.skills||[])) {
       if (seen.has(s.name)) continue

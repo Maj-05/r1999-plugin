@@ -21,6 +21,8 @@ const chnFile = readJSON(path.join(DATA, 'character.json'));
 const skillFile = readJSON(path.join(DATA, 'skill.json'));
 const skillEffFile = readJSON(path.join(DATA, 'skill_effect.json'));
 const skillEffMap = (Array.isArray(skillEffFile)) ? new Map(skillEffFile.map(e => [e.id, e])) : null;
+const battleTagFile = readJSON(path.join(DATA, 'character_battle_tag.json'));
+const battleTagMap = (Array.isArray(battleTagFile)) ? new Map(battleTagFile.map(t => [String(t.id), t.tagName])) : null;
 if (Array.isArray(chnFile) && Array.isArray(skillFile)) {
   const skillMap = new Map(skillFile.map(s => [s.id, s]));
   const chnMap = new Map(chnFile.map(c => [c.nameEng, c]));
@@ -30,6 +32,11 @@ if (Array.isArray(chnFile) && Array.isArray(skillFile)) {
     if (!zh) { continue; }
     matched++;
     c.nameZh = zh.name;
+    if (zh.dmgType != null) c.dmgTypeName = (zh.dmgType === 1 ? '现实创伤' : zh.dmgType === 2 ? '精神创伤' : String(zh.dmgType));
+    if (zh.battleTag && battleTagMap) {
+      const tgs = String(zh.battleTag).split('#').map(t => battleTagMap.get(t)).filter(Boolean)
+      if (tgs.length) c.tags = tgs
+    }
     const skillIds = [];
     if (zh.skill) {
       for (const part of String(zh.skill).split('|')) {
