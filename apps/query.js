@@ -1,5 +1,9 @@
 import db from '../lib/db.mjs'
 import { rulePrefix, rarityName } from '../lib/constants.mjs'
+
+const RARITY_KEYS = { '六星':6, '六':6, '6星':6, '五星':5, '五':5, '5星':5, '四星':4, '四':4, '4星':4, '三星':3, '三':3, '3星':3, '二星':2, '二':2, '2星':2 }
+const AFFLATUS_KEYS = { '木': 'Plant', '星': 'Star', '岩': 'Mineral', '兽': 'Beast', '灵': 'Intellect', '智': 'Spirit' }
+
 export class R1999Query extends plugin {
   constructor() {
     super({
@@ -8,60 +12,69 @@ export class R1999Query extends plugin {
       event: 'message',
       priority: 500,
       rule: [
-        { reg: `^${rulePrefix}(角色|人物|arcanist)\\s*(.+)$`, fnc: 'queryCharacter' },
-        { reg: `^${rulePrefix}(心相|psychube)\\s*(.+)$`, fnc: 'queryPsychube' },
-        { reg: `^${rulePrefix}(物品|item)\\s*(.+)$`, fnc: 'queryItem' },
+        { reg: `^${rulePrefix}(角色|人物|arcanist)\\s*(.*)$`, fnc: 'queryCharacter' },
+        { reg: `^${rulePrefix}(心相|psychube)\\s*(.*)$`, fnc: 'queryPsychube' },
+        { reg: `^${rulePrefix}(物品|item)\\s*(.*)$`, fnc: 'queryItem' },
         { reg: `^${rulePrefix}(图鉴状态|状态)\\s*$`, fnc: 'status' }
       ]
     })
   }
   async queryCharacter() {
-    const q = this._kw()
-    if (!q) return await this.reply('用法：#角色 <名称或ID>，如 #角色 槲寄生')
+    const q = this._kw().trim()
+    if (!q) {
+      // 无参数 → 汇总稀有度/属性分布
+      const rc = db.rarityCounts(); const ac = db.afflatusCounts()
+      const rl = Object.entries(rc).map(([k,v])=>k+' '+v).join(' / ')
+      const al = Object.entries(ac).map(([k,v])=>k+' '+v).join(' / ')
+      return await this.reply('【1999 角色】\n稀有度: '+rl+'\n属性: '+al+'\n\n用法：#角色 <名/稀有度/属性>，如 #角色 六星 / 木 / 槲寄生')
+    }
+    // 稀有度筛选
+    if (RARITY_KEYS[q]) {
+      const list = db.charactersByRarity(RARITY_KEYS[q])
+      if (!list.length) return await this.reply('无该稀有度角色')
+      return await this.reply('【'+q+'角色】\n'+list.slice(0,40).map(c=>(c.nameZh||c.name)).join('、'))
+    }
+    // 属性筛选
+    if (AFFLATUS_KEYS[q]) {
+      const list = db.charactersByAfflatus(AFFLATUS_KEYS[q])
+      if (!list.length) return await this.reply('无该属性角色')
+      return await this.reply('【'+q+'属性角色】\n'+list.slice(0,40).map(c=>(c.nameZh||c.name)).join('、'))
+    }
     const ids = db.searchCharacter(q)
-    if (!ids.length) return await this.reply(`未找到角色「${q}」`)
-    const lines = ids.map(id => this._charLine(id))
-    await this.reply('【重返未来1999 角色】\n' + lines.join('\n'))
-    return true
+    if (!ids.length) return await this.reply('未找到「'+q+'」，试试 #角色 六星 / 木')
+    const lines = ids.slice(0,8).map(id => this._charLine(id))
+    return await this.reply('【1999 角色】\n'+lines.join('\n'))
   }
   async queryPsychube() {
-    const q = this._kw()
+    const q = this._kw().trim()
     if (!q) return await this.reply('用法：#心相 <名称>')
     const ids = db.searchPsychube(q)
-    if (!ids.length) return await this.reply(`未找到心相「${q}」`)
-    const lines = ids.map(id => { const p = db.getPsychube(id); return `${p.name}（${rarityName(p.rarity)}）` })
-    await this.reply('【1999 心相】\n' + lines.join('\n'))
-    return true
+    if (!ids.length) return await this.reply('未找到心相「'+q+'」')
+    const lines = ids.slice(0,8).map(id => { const p = db.getPsychube(id); return p.name+'（'+rarityName(p.rarity)+'）'+(p.tag && p.tag!=='None' ? '['+p.tag+']' : '')+(p.impression ? '\n　'+p.impression : '') })
+    return await this.reply('【1999 心相】\n'+lines.join('\n'))
   }
   async queryItem() {
-    const q = this._kw()
+    const q = this._kw().trim()
     if (!q) return await this.reply('用法：#物品 <名称>')
     const ids = db.searchItem(q)
-    if (!ids.length) return await this.reply(`未找到物品「${q}」`)
-    const lines = ids.map(id => { const i = db.getItem(id); return i ? (i.name + '（' + (i.rarityName || '') + '）') : ('#' + id) })
-    await this.reply('【1999 物品】\n' + lines.join('\n'))
-    return true
+    if (!ids.length) return await this.reply('未找到物品「'+q+'」')
+    const lines = ids.slice(0,8).map(id => { const i = db.getItem(id); return i ? (i.name+'（'+(i.rarityName||'')+'）') : ('#'+id) })
+    return await this.reply('【1999 物品】\n'+lines.join('\n'))
   }
   async status() {
-    db.load()
-    const s = db.stats()
-    await this.reply(`【1999图鉴数据】\n角色: ${s.characters}\n心相: ${s.psychubes}\n物品: ${s.items}\n构建: ${s.builtAt}`)
-    return true
+    db.load(); const s = db.stats()
+    return await this.reply('【1999图鉴数据】\n角色: '+s.characters+'\n心相: '+s.psychubes+'\n物品: '+s.items+'\n构建: '+s.builtAt)
   }
   _kw() {
     const msg = this.e?.msg || ''
-    const m = msg.replace(/^[#\/\s]+/, '').match(/(?:角色|人物|arcanist|心相|psychube|物品|item)\s+(.+)$/i)
+    const m = msg.replace(/^[#\/\s]+/, '').match(/(?:角色|人物|arcanist|心相|psychube|物品|item)\s+(.*)$/i)
     return m ? m[1].trim() : ''
   }
   _charLine(id) {
     const c = db.getCharacter(id)
-    if (!c) return '#' + id
-    const nm = c.nameZh ? (c.nameZh + ' (' + c.name + ')') : c.name
-    const skills = (c.skills || [])
-      .filter((s, i, a) => a.findIndex(x => x.name === s.name) === i)
-      .map(s => s.name).join(' / ')
-    return nm + ' ' + c.rarityName + '｜' + c.afflatusName + '｜' + (skills || '无技能')
-      + (c.ritual ? '｜仪式:' + c.ritual.name : '')
-      + (c.released ? '' : '（未实装）')
+    if (!c) return '#'+id
+    const nm = c.nameZh ? (c.nameZh+' ('+c.name+')') : c.name
+    const skills = (c.skills||[]).filter((s,i,a)=>a.findIndex(x=>x.name===s.name)===i).map(s=>s.name).join(' / ')
+    return nm+' '+c.rarityName+'｜'+c.afflatusName+'｜'+(skills||'无技能')+(c.ritual?'｜仪式:'+c.ritual.name:'')+(c.released?'':'（未实装）')
   }
 }
