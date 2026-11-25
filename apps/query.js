@@ -42,6 +42,7 @@ export class R1999Query extends plugin {
     }
     const ids = db.searchCharacter(q)
     if (!ids.length) return await this.reply('未找到「'+q+'」，试试 #角色 六星 / 木')
+    if (ids.length === 1) return await this.reply(this._charDetail(ids[0]))
     const lines = ids.slice(0,8).map(id => this._charLine(id))
     return await this.reply('【1999 角色】\n'+lines.join('\n'))
   }
@@ -69,6 +70,20 @@ export class R1999Query extends plugin {
     const msg = this.e?.msg || ''
     const m = msg.replace(/^[#\/\s]+/, '').match(/(?:角色|人物|arcanist|心相|psychube|物品|item)\s+(.*)$/i)
     return m ? m[1].trim() : ''
+  }
+  _charDetail(id) {
+    const c = db.getCharacter(id)
+    if (!c) return '#'+id
+    const nm = c.nameZh ? (c.nameZh+' ('+c.name+')') : c.name
+    const lines = ['【'+nm+'】'+c.rarityName+'｜'+c.afflatusName+(c.released?'':'（未实装）')]
+    const seen = new Set()
+    for (const s of (c.skills||[])) {
+      if (seen.has(s.name)) continue
+      seen.add(s.name)
+      lines.push('『'+s.name+'』'+(s.desc ? '\n　'+s.desc : ''))
+    }
+    if (c.ritual) lines.push('【至终的仪式】'+c.ritual.name+(c.ritual.desc ? '\n　'+c.ritual.desc : ''))
+    return lines.join('\n')
   }
   _charLine(id) {
     const c = db.getCharacter(id)
