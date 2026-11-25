@@ -47,7 +47,11 @@ export class R1999Query extends plugin {
   }
   async queryPsychube() {
     const q = this._kw().trim()
-    if (!q) return await this.reply('用法：#心相 <名称>')
+    if (!q) return await this.reply('用法：#心相 <名称/稀有度>，如 #心相 六星 / Gluttony')
+    if (RARITY_KEYS[q]) {
+      const list = db.psychubesByRarity(RARITY_KEYS[q])
+      return this._paginate(list.map(p=>p.name+'（'+rarityName(p.rarity)+'）'), '【'+q+'心相】')
+    }
     const ids = db.searchPsychube(q)
     if (!ids.length) return await this.reply('未找到心相「'+q+'」')
     return this._paginate(ids.map(id => { const p = db.getPsychube(id); return p.name+'（'+rarityName(p.rarity)+'）'+(p.tag && p.tag!=='None' ? '['+p.tag+']' : '') }), '【1999 心相】', id=>{ const p=db.getPsychube(id); return p.name+'（'+rarityName(p.rarity)+'）'+(p.impression?'\n　'+p.impression:'') })
