@@ -19,6 +19,8 @@ characters.sort((a,b)=>b.rarity-a.rarity || a.id-b.id);
 // ===== 合并 re1999-data 中文名 + 技能（可选；缺 character.json/skill.json 时跳过）=====
 const chnFile = readJSON(path.join(DATA, 'character.json'));
 const skillFile = readJSON(path.join(DATA, 'skill.json'));
+const skillEffFile = readJSON(path.join(DATA, 'skill_effect.json'));
+const skillEffMap = (Array.isArray(skillEffFile)) ? new Map(skillEffFile.map(e => [e.id, e])) : null;
 if (Array.isArray(chnFile) && Array.isArray(skillFile)) {
   const skillMap = new Map(skillFile.map(s => [s.id, s]));
   const chnMap = new Map(chnFile.map(c => [c.nameEng, c]));
@@ -36,7 +38,7 @@ if (Array.isArray(chnFile) && Array.isArray(skillFile)) {
         for (let i = 1; i < seg.length; i++) {
           const id = Number(seg[i]);
           const sk = skillMap.get(id);
-          if (sk) skillIds.push({ slot, tier: i, id, name: sk.name || ('技能' + id), desc: sk.desc_art || '' });
+          if (sk) { const eff = skillEffMap ? skillEffMap.get(sk.skillEffect) : null; skillIds.push({ slot, tier: i, id, name: sk.name || ('技能' + id), desc: sk.desc_art || '', effect: eff ? eff.desc : '' }); }
         }
       }
     }

@@ -120,7 +120,8 @@ export class R1999Query extends plugin {
     for (const s of (c.skills||[])) {
       if (seen.has(s.name)) continue
       seen.add(s.name)
-      lines.push('『'+s.name+'』'+(s.desc ? '\n　'+s.desc : ''))
+      const effLine = s.effect ? (s.desc && s.desc !== s.effect ? '\n　'+s.desc : '')+'\n　'+s.effect : (s.desc ? '\n　'+s.desc : '')
+      lines.push('『'+s.name+'』'+effLine)
     }
     if (c.ritual) lines.push('【至终的仪式】'+c.ritual.name+(c.ritual.desc ? '\n　'+c.ritual.desc : ''))
     return lines.join('\n')
