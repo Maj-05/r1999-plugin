@@ -1,11 +1,11 @@
-﻿import fs from 'node:fs';
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
 const DATA = path.join(ROOT, 'data');
 const OUT = path.join(ROOT, 'resources', 'data');
-const AFFLATUS_CN = { Beast: '兽', Star: '星', Mineral: '岩', Plant: '木', Intellect: '灵', Spirit: '智' };
+const AFFLATUS_CN = { Beast: '兽', Star: '星', Mineral: '岩', Plant: '木', Intellect: '智', Spirit: '灵' };
 function readJSON(p) { try { return JSON.parse(fs.readFileSync(p, 'utf8')) } catch { return null } }
 function rarityName(r) { const m = {6:'六星',5:'五星',4:'四星',3:'三星',2:'二星'}; return m[r] || ('R' + r) }
 const arcanists = readJSON(path.join(DATA, 'arcanists.json')) || [];
@@ -51,7 +51,7 @@ if (Array.isArray(chnFile) && Array.isArray(skillFile)) {
     }
     if (zh.exSkill) {
       const sk = skillMap.get(Number(zh.exSkill));
-      if (sk) c.ritual = { id: Number(zh.exSkill), name: sk.name || ('仪式' + zh.exSkill), desc: sk.desc_art || '' };
+      if (sk) c.ritual = { id: Number(zh.exSkill), name: sk.name || ('仪式' + zh.exSkill), desc: sk.desc_art || '', effect: skillEffMap?.get(sk.skillEffect)?.desc || '' };
     }
     c.skills = skillIds;
   }
@@ -61,12 +61,13 @@ if (Array.isArray(chnFile) && Array.isArray(skillFile)) {
 }
 const psychubes = (readJSON(path.join(DATA, 'psychubes.json')) || []).map(p => ({
   id: p.Id, name: p.Name, rarity: p.Rarity, rarityName: rarityName(p.Rarity),
-  tag: p.Tag, impression: p.Impression || ''
+  tag: p.Tag, impression: p.Impression || '', amplification: p.Amplification || []
 })).sort((a,b)=>b.rarity-a.rarity || a.id-b.id);
 const items = (readJSON(path.join(DATA, 'items.json')) || []);
 const itemsOut = (Array.isArray(items) ? items : []).map(i => ({
-  id: i.Id, name: i.Name, rarity: i.Rarity ?? null, rarityName: i.Rarity != null ? rarityName(i.Rarity) : ''
+  id: i.Id, name: i.Name, category: i.Category, description: i.Description, source: i.Source, usage: i.Usage, rarity: i.Rarity ?? null, rarityName: i.Rarity != null ? rarityName(i.Rarity) : ''
 }));
+if (![characters, psychubes, itemsOut].every(rows => rows.length > 0)) throw new Error('构建源不完整，保留现有快照')
 fs.mkdirSync(OUT, { recursive: true });
 fs.writeFileSync(path.join(OUT, 'characters.json'), JSON.stringify(characters));
 fs.writeFileSync(path.join(OUT, 'psychubes.json'), JSON.stringify(psychubes));

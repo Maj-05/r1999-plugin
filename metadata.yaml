@@ -1,0 +1,6 @@
+name: astrbot_plugin_r1999
+display_name: 重返未来：1999 离线图鉴
+desc: 角色技能、心相增幅和物品来源查询。需 Node.js 20 或更新版本。
+version: v0.2.0
+author: Maj-05
+repo: https://github.com/Maj-05/r1999-plugin

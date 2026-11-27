@@ -1,43 +1,27 @@
-# r1999-plugin
+# 重返未来：1999 离线图鉴
 
-Yunzai (TRSS/Miao) 插件·重返未来：1999 图鉴。
-
-离线查询角色/心相/物品，支持中英文名、稀有度/属性筛选、技能效果数值、多结果分页。
+支持云崽（TRSS / Miao-Yunzai）和 AstrBot。安装包自带 139 个角色、37 张心相和 91 件物品的快照。129 个角色有中文名和技能，心相和物品主要使用英文名。用「图鉴状态」查看快照构建时间。
 
 ## 安装
 
-```bash
-# 进入你的 Yunzai 目录（TRSS-Yunzai 或 Miao-Yunzai）
-cd plugins
-git clone https://github.com/Maj-05/r1999-plugin.git r1999-plugin
-cd r1999-plugin && pnpm i
-```
+**云崽**：在云崽根目录运行 `git clone https://github.com/Maj-05/r1999-plugin.git plugins/r1999-plugin`，重启后发送 `#1999帮助`。已有 Git 安装可在插件目录运行 `git pull --ff-only`。无需安装 npm 包。
 
-> 插件已内置构建好的数据，克隆即可用，无需手动构建。
+**AstrBot**：在 AstrBot 所在的机器或容器中安装 Node.js 20+，确认 `node --version` 可用。在插件管理中使用仓库地址 `https://github.com/Maj-05/r1999-plugin` 安装，或上传独立 ZIP，加载后发送 `/r1999 帮助`。无需启动云崽或配置 API 密钥。
 
 ## 命令
 
-| 命令 | 说明 |
-|---|---|
-| #角色 槲寄生 / Druvis | 角色详情：稀有度/属性/技能+效果/仪式 |
-| #角色 六星 / 五星 | 按稀有度列角色 |
-| #角色 木 / 星 / 兽 | 按属性列角色 |
-| #角色 | 稀有度/属性分布汇总 |
-| #心相 <名称/六星> | 心相查询（含印象）/ 按稀有度列心相 |
-| #物品 <名称> | 物品查询 |
-| #图鉴状态 | 数据统计 |
-| #下一页 / #上一页 / 回复序号 | 多结果分页浏览/选择 |
+| 用途 | 云崽 | AstrBot |
+|---|---|---|
+| 查看角色各阶技能与仪式 | `#角色 槲寄生` | `/r1999 角色 Druvis III` |
+| 按稀有度和灵感筛选 | `#1999角色 六星 木` | `/r1999 角色 六星 木` |
+| 查心相增幅和印象 | `#心相 Yearning Desire` | `/r1999 心相 Yearning Desire` |
+| 查物品来源与用途 | `#物品 Rhine Gold` | `/r1999 物品 Rhine Gold` |
+| 跳页 | `#角色 六星 第2页` | `/r1999 角色 六星 第2页` |
+| 按 ID 展开详情 | `#角色 10001` | `/r1999 角色 10001` |
+| 数据统计 | `#1999图鉴状态` | `/r1999 图鉴状态` |
 
-> 前缀：#1999 / #r1999。角色支持中英文名 + ID 查询。
+云崽在同一会话内支持 `#下一页`、`#上一页`，也可在五分钟内回复列表显示的序号。AstrBot 使用显式页码和 ID。
 
-## 数据
+## 数据来源
 
-- 英文养成: [kornblume](https://github.com/windbow27/kornblume) public/data
-- 中文名+技能+效果: [St-Pavlov-Foundation/re1999-data](https://github.com/St-Pavlov-Foundation/re1999-data)
-- 构建: node scripts/build_data.mjs → resources/data（自动合并中英数据）
-
-## 现状
-
-- [x] 中文名+技能+仪式、稀有度/属性筛选、心相印象、角色详情卡
-- [x] 技能效果数值解析、多结果分页
-- [ ] 卡片渲染（HTML 立绘卡）
+英文资料来自 [kornblume](https://github.com/windbow27/kornblume)，中文技能和效果来自 [re1999-data](https://github.com/St-Pavlov-Foundation/re1999-data)。从现有本地数据重建可运行 `node scripts/build_data.mjs`，运行回归测试使用 `npm test`。
